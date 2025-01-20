@@ -1,16 +1,10 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException, Header
 from dotenv import load_dotenv
-import logging
 
 from util.validate import validate_bearer_token
 from util.get_listings import get_listings_util
 from util.insert_listings import insert_listings_util
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-logger.info("Starting FastAPI application")
 
 # Load environment variables from .env
 load_dotenv()
