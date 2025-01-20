@@ -10,5 +10,11 @@
       "src": "/(.*)",
       "dest": "main.py"
     }
+  ],
+  "cron": [
+    {
+      "path": "/cron/insertListings",
+      "schedule": "*/2 * * * *"
+    }
   ]
 }
