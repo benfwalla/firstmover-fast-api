@@ -1,4 +1,10 @@
 {
+  "cron": [
+    {
+      "path": "/cron/insertListings",
+      "schedule": "*/2 * * * *"
+    }
+  ],
   "builds": [
     {
       "src": "main.py",
