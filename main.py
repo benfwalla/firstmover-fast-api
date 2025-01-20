@@ -1,19 +1,20 @@
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 import requests
 from dotenv import load_dotenv
 
 # Load environment variables from .env
 load_dotenv()
-proxy_username = os.getenv("PROXY_USERNAME")
-proxy_password = os.getenv("PROXY_PASSWORD")
-proxy_url = os.getenv("PROXY_URL")
+PROXY_USERNAME = os.getenv("PROXY_USERNAME")
+PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")
+PROXY_URL = os.getenv("PROXY_URL")
+BEARER_TOKEN = os.getenv("BEARER_TOKEN")
 
-if not all([proxy_username, proxy_password, proxy_url]):
+if not all([PROXY_USERNAME, PROXY_PASSWORD, PROXY_URL]):
     raise ValueError("Missing required proxy credentials in the environment variables.")
 
 # Construct the full proxy URL
-proxy_full_url = f"http://{proxy_username}:{proxy_password}@{proxy_url}"
+proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_URL}"
 proxies = {
     "http": proxy_full_url,
     "https": proxy_full_url,
@@ -22,8 +23,19 @@ proxies = {
 app = FastAPI()
 
 
+def validate_bearer_token(authorization: str = Header(...)):
+    # Check if the header is formatted as "Bearer <token>"
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid Authorization header format.")
+
+    token = authorization.split("Bearer ")[1]
+    if token != BEARER_TOKEN:
+        raise HTTPException(status_code=401, detail="Invalid Bearer token.")
+    return True
+
+
 @app.get("/getListings")
-def get_listings(perPage: int = 10):
+def get_listings(perPage: int = 10, _: bool = Depends(validate_bearer_token)):
 
     payload = {
         "query": """
@@ -149,6 +161,6 @@ def get_listings(perPage: int = 10):
 
 
 @app.post("/insertListings")
-def insert_listings(perPage: int = 10):
+def insert_listings(perPage: int = 10, _: bool = Depends(validate_bearer_token)):
     print(f"Inserting {perPage} listings...")
     return {"message": f"Inserted {perPage} listings successfully!"}
