@@ -9,12 +9,12 @@ from util.get_listings import get_listings_util
 load_dotenv()
 
 # Redis configuration
-REDIS_URL = os.getenv("REDIS_URL")
-REDIS_TOKEN = os.getenv("REDIS_TOKEN")
-if not REDIS_URL or not REDIS_TOKEN:
+KV_REST_API_URL = os.getenv("KV_REST_API_URL")
+KV_REST_API_TOKEN = os.getenv("KV_REST_API_TOKEN")
+if not KV_REST_API_URL or not KV_REST_API_TOKEN:
     raise ValueError("Missing Redis configuration")
 
-redis = Redis(url=REDIS_URL, token=REDIS_TOKEN)
+redis = Redis(url=KV_REST_API_URL, token=KV_REST_API_TOKEN)
 
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL")
