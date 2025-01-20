@@ -4,4 +4,3 @@ requests
 python-dotenv
 upstash-redis
 supabase
-logging
