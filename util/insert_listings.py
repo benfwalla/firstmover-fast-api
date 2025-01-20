@@ -36,11 +36,8 @@ def insert_listings_util(perPage, proxies):
     last_ids_raw = redis.get("last_25_ids")
     last_ids = last_ids_raw.split(",") if last_ids_raw else []
 
-    print("Last IDs:", last_ids)
     # Find new IDs (not present in last 25 IDs)
     new_ids = [id for id in latest_ids if id not in last_ids]
-
-    print("New IDs:", new_ids)
 
     # Prepare new listings for upsert
     new_listings = [
@@ -96,4 +93,5 @@ def insert_listings_util(perPage, proxies):
 
         redis.set("last_25_ids", ",".join(latest_ids))
 
+    print({"newListings": new_listings})
     return { "newListings": new_listings }
