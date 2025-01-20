@@ -34,11 +34,3 @@ def get_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
 @app.post("/insertListings")
 def insert_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
     return insert_listings_util(perPage, proxies)
-
-@app.post("/cron/insertListings")
-def cron_insert_listings(authorization: str = Header(...), perPage: int = 30):
-    # Validate the Authorization header
-    if authorization == f"Bearer {CRON_SECRET}":
-        return insert_listings_util(perPage, proxies)
-    else:
-        raise HTTPException(status_code=401, detail="Unauthorized")
