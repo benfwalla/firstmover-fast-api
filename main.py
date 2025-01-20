@@ -25,6 +25,9 @@ proxies = {
 
 app = FastAPI()
 
+@app.get("/")
+def read_root():
+    return {"message": "Bloop bloop welcome to the FirstMover API!"}
 
 @app.get("/getListings")
 def get_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
