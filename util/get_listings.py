@@ -2,9 +2,11 @@ import requests
 from fastapi import HTTPException
 import vercel_blob.blob_store
 import json
+import os
 from dotenv import load_dotenv
 
 load_dotenv()
+BLOB_READ_WRITE_TOKEN = os.getenv("BLOB_READ_WRITE_TOKEN")
 
 
 def get_listings_util(perPage, proxies):
@@ -149,7 +151,10 @@ def get_listings_util(perPage, proxies):
 
         resp = vercel_blob.blob_store.put('latest_listings.json',
                                           json.dumps(filtered_data).encode('utf-8'),
-                                          options={"addRandomSuffix": False, "cacheControlMaxAge": "0"} )
+                                          options={"token": BLOB_READ_WRITE_TOKEN,
+                                                   "addRandomSuffix": False,
+                                                   "cacheControlMaxAge": "0"}
+                                          )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"BlobError: {e}")
 
