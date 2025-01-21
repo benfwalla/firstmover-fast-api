@@ -134,20 +134,21 @@ def get_listings_util(perPage, proxies):
 
     # Blob Storage
     try:
-        filtered_data = [
-            {
-                "id": node["node"]["id"],
-                "areaName": node["node"]["areaName"],
-                "availableAt": node["node"]["availableAt"],
-                "buildingType": node["node"]["buildingType"],
-                "price": node["node"]["price"],
-                "leadMedia": node["node"]["leadMedia"],
-                "unit": node["node"]["unit"],
-                "urlPath": node["node"]["urlPath"],
-                "noFee": node["node"]["noFee"]
-            }
-            for node in response.json()["data"]["searchRentals"]["edges"]
-        ]
+        filtered_data = []
+        for edge in response.json()["data"]["searchRentals"]["edges"]:
+            node = edge["node"]
+            filtered_data.append({
+                "id": node.get("id"),
+                "areaName": node.get("areaName"),
+                "availableAt": node.get("availableAt"),
+                "buildingType": node.get("buildingType"),
+                "price": node.get("price"),
+                "leadMedia": node.get("leadMedia"),
+                "street": node.get("street"),
+                "unit": node.get("unit"),
+                "urlPath": node.get("urlPath"),
+                "noFee": node.get("noFee"),
+            })
 
         resp = vercel_blob.blob_store.put('latest_listings.json',
                                           json.dumps(filtered_data).encode('utf-8'),
@@ -163,4 +164,4 @@ def get_listings_util(perPage, proxies):
 
 
 if __name__ == "__main__":
-    print(get_listings_util(100, None))
+    print(get_listings_util(10, None))
