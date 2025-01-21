@@ -1,5 +1,10 @@
 import requests
 from fastapi import HTTPException
+import vercel_blob.blob_store
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def get_listings_util(perPage, proxies):
@@ -117,9 +122,40 @@ def get_listings_util(perPage, proxies):
 
     url = "https://api-v6.streeteasy.com/"
 
+    # Make Request to Streeteasy
     try:
         response = requests.request("POST", url, headers=headers, json=payload, proxies=proxies)
         response.raise_for_status()
-        return response.json()
+
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail=f"Error: {e}")
+
+    # Blob Storage
+    try:
+        filtered_data = [
+            {
+                "id": node["node"]["id"],
+                "areaName": node["node"]["areaName"],
+                "availableAt": node["node"]["availableAt"],
+                "buildingType": node["node"]["buildingType"],
+                "price": node["node"]["price"],
+                "leadMedia": node["node"]["leadMedia"],
+                "unit": node["node"]["unit"],
+                "urlPath": node["node"]["urlPath"],
+                "noFee": node["node"]["noFee"]
+            }
+            for node in response.json()["data"]["searchRentals"]["edges"]
+        ]
+
+        resp = vercel_blob.blob_store.put('latest_listings.json',
+                                          json.dumps(filtered_data).encode('utf-8'),
+                                          options={"addRandomSuffix": False, "cacheControlMaxAge": "0"} )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"BlobError: {e}")
+
+
+    return response.json()
+
+
+if __name__ == "__main__":
+    print(get_listings_util(100, None))
