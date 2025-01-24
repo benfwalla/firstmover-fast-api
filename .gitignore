@@ -5,4 +5,4 @@ __pycache__/
 .idea/
 
 .env
-test.py
+playground
