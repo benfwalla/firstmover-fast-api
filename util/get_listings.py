@@ -1,9 +1,17 @@
 import requests
+import logging
 from fastapi import HTTPException
 import vercel_blob.blob_store
 import json
 import os
 from dotenv import load_dotenv
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 BLOB_READ_WRITE_TOKEN = os.getenv("BLOB_READ_WRITE_TOKEN")
@@ -130,6 +138,7 @@ def get_listings_util(perPage, proxies):
         response.raise_for_status()
 
     except requests.exceptions.RequestException as e:
+        logger.error("Failed to fetch from Streeteasy: %s", e)
         raise HTTPException(status_code=500, detail=f"Error: {e}")
 
     # Blob Storage

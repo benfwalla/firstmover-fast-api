@@ -6,15 +6,15 @@ from upstash_redis import Redis
 from supabase import create_client, Client
 from util.get_listings import get_listings_util
 
-# Load environment variables
-load_dotenv()
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+# Load environment variables
+load_dotenv()
 
 # Redis configuration
 KV_REST_API_URL = os.getenv("KV_REST_API_URL")
@@ -35,14 +35,13 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def insert_listings_util(perPage, proxies):
-    logger.info("Fetching listings with perPage=%s and proxies=%s", perPage, proxies)
+    logger.info("Fetching listings with perPage=%s", perPage)
 
     try:
         fetched_data = get_listings_util(perPage, proxies)
         edges = fetched_data["data"]["searchRentals"].get("edges", [])
         logger.info(f"Fetched {len(edges)} listings")
     except Exception as e:
-        logger.error("Error fetching listings: %s", e)
         raise HTTPException(status_code=500, detail="Error fetching listings")
 
     latest_ids = [edge["node"]["id"] for edge in edges]
