@@ -56,9 +56,8 @@ def get_blob(response: Response):
 
         # Add required CORS headers
         response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET,HEAD,OPTIONS"
+        response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        response.headers["Access-Control-Allow-Credentials"] = "true"
 
         # Return the blob content
         return blob_response.json()
