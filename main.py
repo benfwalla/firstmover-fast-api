@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import pytz
 import requests
-from fastapi import FastAPI, Depends, HTTPException, Header, Response
+from fastapi import FastAPI, Depends, HTTPException, Response, Query
 from dotenv import load_dotenv
 
 from util.validate import validate_bearer_token
@@ -51,7 +51,7 @@ def options_blob(response: Response):
 
 
 @app.get("/getBlob")
-def get_blob(response: Response):
+def get_blob(response: Response, listing: int = Query(None, ge=0, le=4)):
     # Blob URL
     blob_url = "https://591qwi72as9qsy9j.public.blob.vercel-storage.com/latest_listings.json"
 
@@ -78,6 +78,16 @@ def get_blob(response: Response):
         response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
 
+        # Check if listing query parameter is passed
+        if listing is not None:
+            if isinstance(limited_data, list) and 0 <= listing < len(limited_data):
+                return {
+                    "message": f"Most recent listing as of {formatted_time}",
+                    "listing": limited_data[listing]
+                }
+            else:
+                raise HTTPException(status_code=404, detail="Invalid index for listings")
+
         # Return the limited data with the most recent listings timestamp
         return {
             "message": f"Most recent listings as of {formatted_time}",
@@ -86,4 +96,5 @@ def get_blob(response: Response):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blob: {str(e)}")
+
 
