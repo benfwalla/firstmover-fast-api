@@ -14,7 +14,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-BLOB_READ_WRITE_TOKEN = os.getenv("BLOB_READ_WRITE_TOKEN")
+LISTINGS_BLOB_READ_WRITE_TOKEN = os.getenv("LISTINGS_BLOB_READ_WRITE_TOKEN")
 
 
 def get_listings_util(perPage, proxies):
@@ -161,7 +161,7 @@ def get_listings_util(perPage, proxies):
 
         resp = vercel_blob.blob_store.put('latest_listings.json',
                                           json.dumps(filtered_data).encode('utf-8'),
-                                          options={"token": BLOB_READ_WRITE_TOKEN,
+                                          options={"token": LISTINGS_BLOB_READ_WRITE_TOKEN,
                                                    "addRandomSuffix": False,
                                                    "cacheControlMaxAge": "0"}
                                           )
