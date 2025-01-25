@@ -147,16 +147,19 @@ def get_listings_util(perPage, proxies):
         for edge in response.json()["data"]["searchRentals"]["edges"]:
             node = edge["node"]
             filtered_data.append({
-                "id": node.get("id"),
-                "areaName": node.get("areaName"),
-                "availableAt": node.get("availableAt"),
-                "buildingType": node.get("buildingType"),
-                "price": node.get("price"),
-                "leadMedia": node.get("leadMedia"),
-                "street": node.get("street"),
-                "unit": node.get("unit"),
-                "urlPath": node.get("urlPath"),
-                "noFee": node.get("noFee"),
+                "photo": f"https://photos.zillowstatic.com/fp/{node['leadMedia']['photo']['key']}-se_large_800_400.webp" if node.get(
+                    "leadMedia") and node["leadMedia"].get("photo") else None,
+                "url": f"https://streeteasy.com{node.get('urlPath')}" if node.get("urlPath") else None,
+                "topLine": (
+                    f"{'${:,.0f}'.format(node.get('price')) if node.get('price') else 'Price not available'} | "
+                    f"{'No Fee' if node.get('noFee') else 'Fee Likely'} | "
+                    f"{node.get('areaName')}" if node.get("areaName") else None
+                ),
+
+                "bedBathDisplay": (
+                    f"{'Studio' if node.get('bedroomCount', 0) == 0 else f'{node.get('bedroomCount', 0)} Bed'} | "
+                    f"{f'{int(node.get('fullBathroomCount', 0))} Bath' if node.get('halfBathroomCount', 0) == 0 else f'{node.get('fullBathroomCount', 0) + node.get('halfBathroomCount', 0) * 0.5:.1f} Bath'}"
+                )
             })
 
         resp = vercel_blob.blob_store.put('latest_listings.json',
