@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+import pytz
 import requests
 from fastapi import FastAPI, Depends, HTTPException, Header, Response
 from dotenv import load_dotenv
@@ -50,10 +52,11 @@ def options_blob(response: Response):
 
 @app.get("/getBlob")
 def get_blob(response: Response):
-
+    # Blob URL
     blob_url = "https://591qwi72as9qsy9j.public.blob.vercel-storage.com/latest_listings.json"
 
     try:
+        # Fetch the blob content using requests
         blob_response = requests.get(blob_url)
 
         if blob_response.status_code != 200:
@@ -66,12 +69,20 @@ def get_blob(response: Response):
         blob_data = blob_response.json()
         limited_data = blob_data[:5] if isinstance(blob_data, list) else blob_data
 
+        # Get the current time in Eastern Time (ET)
+        now_et = datetime.now(pytz.timezone("US/Eastern"))
+        formatted_time = now_et.strftime("%-m/%-d/%y @ %-I:%M%p").lower() + " ET"
+
         # Add required CORS headers
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
 
-        return limited_data
+        # Return the limited data with the most recent listings timestamp
+        return {
+            "message": f"Most recent listings as of {formatted_time}",
+            "listings": limited_data
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blob: {str(e)}")
