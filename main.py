@@ -39,6 +39,15 @@ def insert_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token))
     return insert_listings_util(perPage, proxies)
 
 
+@app.options("/getBlob")
+def options_blob(response: Response):
+    # Handle preflight `OPTIONS` requests for /getBlob
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return {}
+
+
 @app.get("/getBlob")
 def get_blob(response: Response):
     # Blob URL
