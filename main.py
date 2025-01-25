@@ -50,11 +50,10 @@ def options_blob(response: Response):
 
 @app.get("/getBlob")
 def get_blob(response: Response):
-    # Blob URL
+
     blob_url = "https://591qwi72as9qsy9j.public.blob.vercel-storage.com/latest_listings.json"
 
     try:
-        # Fetch the blob content using requests
         blob_response = requests.get(blob_url)
 
         if blob_response.status_code != 200:
@@ -63,13 +62,16 @@ def get_blob(response: Response):
                 detail=f"Failed to fetch blob: {blob_response.reason}",
             )
 
+        # Parse the JSON and get the first 5 items
+        blob_data = blob_response.json()
+        limited_data = blob_data[:5] if isinstance(blob_data, list) else blob_data
+
         # Add required CORS headers
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
 
-        # Return the blob content
-        return blob_response.json()
+        return limited_data
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blob: {str(e)}")
