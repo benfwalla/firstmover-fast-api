@@ -6,3 +6,4 @@ upstash-redis
 supabase
 vercel_blob
 pytz
+python-telegram-bot

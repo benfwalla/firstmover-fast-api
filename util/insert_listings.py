@@ -5,6 +5,8 @@ from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
 from util.get_listings import get_listings_util
+from util.vin import vins_evaluator
+from util.telegram import send_to_telegram
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +35,10 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase configuration")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Telegram configuration
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
 
 def insert_listings_util(perPage, proxies):
     logger.info("Fetching listings with perPage=%s", perPage)
@@ -98,6 +104,18 @@ def insert_listings_util(perPage, proxies):
                 "upcoming_open_house_appointment_only": (node.get("upcomingOpenHouse") or {}).get("appointmentOnly"),
             }
             new_listings.append(listing)
+
+            telegram_message = (
+                f"<b>${listing['price']:,}</b> | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
+                f"<b>{listing['bedroom_count']} Bed | {listing.get('full_bathroom_count', 0)} Bath</b>\n\n"
+                f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
+            )
+
+            send_to_telegram(7004230326, telegram_message, TELEGRAM_BOT_TOKEN)
+
+            if vins_evaluator(listing):
+                send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
+
 
     logger.info(f"Prepared {len(new_listings)} new listings for upsert")
 
