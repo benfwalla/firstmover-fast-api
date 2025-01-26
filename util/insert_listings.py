@@ -106,12 +106,12 @@ def insert_listings_util(perPage, proxies):
             new_listings.append(listing)
 
             telegram_message = (
-                f"<b>${listing['price']:,}</b> | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
-                f"<b>{listing['bedroom_count']} Bed | {listing.get('full_bathroom_count', 0)} Bath</b>\n\n"
+                f"${listing['price']:,} | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
+                f"{listing['bedroom_count']} Bed | {listing.get('full_bathroom_count', 0)} Bath\n"
                 f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
             )
 
-            send_to_telegram(7004230326, telegram_message, TELEGRAM_BOT_TOKEN)
+            send_to_telegram(-4731252559, telegram_message, TELEGRAM_BOT_TOKEN)
 
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
