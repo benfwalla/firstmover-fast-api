@@ -105,9 +105,11 @@ def insert_listings_util(perPage, proxies):
             }
             new_listings.append(listing)
 
+            total_bathrooms = listing.get("full_bathroom_count", 0) + listing.get("half_bathroom_count", 0)
+
             telegram_message = (
                 f"${listing['price']:,} | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
-                f"{listing['bedroom_count']} Bed | {listing.get('full_bathroom_count', 0)} Bath\n"
+                f"{listing['bedroom_count']} Bed | {total_bathrooms} Bath\n"
                 f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
             )
 
