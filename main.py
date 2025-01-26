@@ -41,7 +41,7 @@ def insert_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token))
     return insert_listings_util(perPage, proxies)
 
 
-@app.options("/getBlob")
+@app.options("/getFramerBlob")
 def options_blob(response: Response):
     # Handle preflight `OPTIONS` requests for /getBlob
     response.headers["Access-Control-Allow-Origin"] = "*"
