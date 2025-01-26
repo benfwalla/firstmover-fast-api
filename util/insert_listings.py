@@ -106,6 +106,7 @@ def insert_listings_util(perPage, proxies):
             new_listings.append(listing)
 
             total_bathrooms = listing.get("full_bathroom_count", 0) + (listing.get("half_bathroom_count", 0)*0.5)
+            total_bathrooms = int(total_bathrooms) if total_bathrooms.is_integer() else total_bathrooms
 
             telegram_message = (
                 f"${listing['price']:,} | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
