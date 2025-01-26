@@ -50,9 +50,9 @@ def options_blob(response: Response):
     return {}
 
 
-@app.get("/getBlob")
-def get_blob(response: Response, listing: int = Query(None, ge=0, le=4)):
-    # Blob URL
+@app.get("/getFramerBlob")
+def get_blob(response: Response):
+
     blob_url = "https://591qwi72as9qsy9j.public.blob.vercel-storage.com/latest_listings.json"
 
     try:
@@ -69,6 +69,13 @@ def get_blob(response: Response, listing: int = Query(None, ge=0, le=4)):
         blob_data = blob_response.json()
         limited_data = blob_data[:5] if isinstance(blob_data, list) else blob_data
 
+        # Flatten the listings into a single dictionary at the top level
+        flattened_data = {}
+        for i, listing in enumerate(limited_data):
+            if isinstance(listing, dict):
+                for key, value in listing.items():
+                    flattened_data[f"{key}{i}"] = value
+
         # Get the current time in Eastern Time (ET)
         now_et = datetime.now(pytz.timezone("US/Eastern"))
         formatted_time = now_et.strftime("%-m/%-d/%y @ %-I:%M%p").lower() + " ET"
@@ -78,23 +85,14 @@ def get_blob(response: Response, listing: int = Query(None, ge=0, le=4)):
         response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Content-Type"
 
-        # Check if listing query parameter is passed
-        if listing is not None:
-            if isinstance(limited_data, list) and 0 <= listing < len(limited_data):
-                return {
-                    "message": f"Most recent listing as of {formatted_time}",
-                    "listing": limited_data[listing]
-                }
-            else:
-                raise HTTPException(status_code=404, detail="Invalid index for listings")
-
-        # Return the limited data with the most recent listings timestamp
+        # Return the flattened data directly in the response
         return {
             "message": f"Most recent listings as of {formatted_time}",
-            "listings": limited_data
+            **flattened_data
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blob: {str(e)}")
+
 
 
