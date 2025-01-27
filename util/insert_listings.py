@@ -52,13 +52,16 @@ def insert_listings_util(perPage, proxies):
 
     latest_ids = [edge["node"]["id"] for edge in edges]
 
-    # Get last IDs from Redis
-    last_ids_raw = redis.get("last_ids")
-    last_ids = last_ids_raw.split(",") if last_ids_raw else []
-    logger.debug("Last IDs: %s", last_ids)
+    try:
+        # Get last IDs from Redis
+        last_ids_raw = redis.get("last_ids")
+        last_ids = last_ids_raw.split(",") if last_ids_raw else []
+        # Find new IDs (not present in last IDs)
+        new_ids = [id for id in latest_ids if id not in last_ids]
+        logger.info(f"{len(new_ids)} of those IDs are new")
 
-    # Find new IDs (not present in last IDs)
-    new_ids = [id for id in latest_ids if id not in last_ids]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Error doing Redis comparison")
 
     # Prepare new listings for upsert
     new_listings = []
@@ -121,6 +124,8 @@ def insert_listings_util(perPage, proxies):
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, "^ omg, Vin got this listing", TELEGRAM_BOT_TOKEN)
+
+            logger.info(f"Sent telegram messages")
 
     logger.info(f"Prepared {len(new_listings)} new listings for upsert")
 
