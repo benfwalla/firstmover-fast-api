@@ -108,9 +108,11 @@ def insert_listings_util(perPage, proxies):
             total_bathrooms = listing.get("full_bathroom_count", 0) + (listing.get("half_bathroom_count", 0)*0.5)
             total_bathrooms = int(total_bathrooms) if total_bathrooms.is_integer() else total_bathrooms
 
+            bedroom_display = "Studio" if listing.get("bedroom_count", 0) == 0 else f"{listing['bedroom_count']} Bed"
+
             telegram_message = (
                 f"${listing['price']:,} | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
-                f"{listing['bedroom_count']} Bed | {total_bathrooms} Bath\n"
+                f"{bedroom_display} | {total_bathrooms} Bath\n"
                 f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
             )
 
