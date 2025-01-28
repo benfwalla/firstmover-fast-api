@@ -119,13 +119,9 @@ def insert_listings_util(perPage, proxies):
                 f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
             )
 
-            send_to_telegram(-4731252559, telegram_message, TELEGRAM_BOT_TOKEN)
-
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, "^ omg, Vin got this listing", TELEGRAM_BOT_TOKEN)
-
-            logger.info(f"Sent telegram messages")
+                send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
     logger.info(f"Prepared {len(new_listings)} new listings for upsert")
 
