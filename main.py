@@ -19,9 +19,10 @@ if not all([PROXY_USERNAME, PROXY_PASSWORD, PROXY_URL]):
     raise ValueError("Missing required proxy credentials in the environment variables.")
 
 # Construct the full proxy URL
+proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_URL}"
 proxies = {
-    "http": f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_URL}",
-    "https": f"https://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_URL}",
+    "http": proxy_full_url,
+    "https": proxy_full_url,
 }
 
 app = FastAPI()
