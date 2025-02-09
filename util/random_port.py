@@ -20,5 +20,5 @@ def get_random_valid_port():
     # Pick a random port within that range
     return random.randint(port_range[0], port_range[1])
 
-# Example usage
-print(get_random_valid_port())
+if __name__ == "__main__":
+    print(get_random_valid_port())
