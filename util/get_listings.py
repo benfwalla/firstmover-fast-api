@@ -1,3 +1,6 @@
+from datetime import datetime
+
+import pytz
 import requests
 import logging
 from fastapi import HTTPException
@@ -5,6 +8,9 @@ import vercel_blob.blob_store
 import json
 import os
 from dotenv import load_dotenv
+
+from util.framer_five import get_framer_five
+from util.random_port import get_random_valid_port
 
 # Configure logging
 logging.basicConfig(
@@ -15,9 +21,14 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 LISTINGS_BLOB_READ_WRITE_TOKEN = os.getenv("LISTINGS_BLOB_READ_WRITE_TOKEN")
+PROXY_USERNAME = os.getenv("PROXY_USERNAME")
+PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")
+
+if not all([PROXY_USERNAME, PROXY_PASSWORD]):
+    raise ValueError("Missing required proxy credentials in the environment variables.")
 
 
-def get_listings_util(perPage, proxies):
+def get_listings_util(perPage):
     payload = {
         "query": """
             query GetAllRentalListingDetails($input: SearchRentalsInput!) {
@@ -132,11 +143,19 @@ def get_listings_util(perPage, proxies):
 
     url = "https://api-v6.streeteasy.com/"
 
+    # Construct the full proxy URL
+    random_port = get_random_valid_port()
+    proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@state.smartproxy.com:{random_port}"
+    proxies = {
+        "http": proxy_full_url,
+        "https": proxy_full_url,
+    }
+    logger.info("Fetching %s listings on Smartproxy port %s", perPage, random_port)
+
     # Make Request to Streeteasy
     try:
         response = requests.request("POST", url, headers=headers, json=payload, proxies=proxies)
         response.raise_for_status()
-
     except requests.exceptions.RequestException as e:
         logger.error("Failed to fetch from Streeteasy: %s", e)
         raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -162,8 +181,10 @@ def get_listings_util(perPage, proxies):
                 )
             })
 
+        blob_json = get_framer_five(filtered_data)
+
         resp = vercel_blob.blob_store.put('latest_listings.json',
-                                          json.dumps(filtered_data).encode('utf-8'),
+                                          json.dumps(blob_json).encode('utf-8'),
                                           options={"token": LISTINGS_BLOB_READ_WRITE_TOKEN,
                                                    "addRandomSuffix": False,
                                                    "cacheControlMaxAge": "0"}

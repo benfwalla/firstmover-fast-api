@@ -40,13 +40,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
-def insert_listings_util(perPage, proxies):
-    logger.info("Fetching listings with perPage=%s", perPage)
+def insert_listings_util(perPage):
 
     try:
-        fetched_data = get_listings_util(perPage, proxies)
+        fetched_data = get_listings_util(perPage)
         edges = fetched_data["data"]["searchRentals"].get("edges", [])
-        logger.info(f"Fetched {len(edges)} listings")
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error fetching listings")
 
@@ -56,7 +54,7 @@ def insert_listings_util(perPage, proxies):
         # Get last IDs from Redis
         last_ids_raw = redis.get("last_ids")
         last_ids = last_ids_raw.split(",") if last_ids_raw else []
-        # Find new IDs (not present in last IDs)
+        # Find new IDs (not present in last_ids from Redis)
         new_ids = [id for id in latest_ids if id not in last_ids]
         logger.info(f"{len(new_ids)} of those IDs are new")
 
