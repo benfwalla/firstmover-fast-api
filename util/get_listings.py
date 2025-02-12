@@ -197,4 +197,4 @@ def get_listings_util(perPage):
 
 
 if __name__ == "__main__":
-    print(get_listings_util(10, None))
+    print(get_listings_util(10))
