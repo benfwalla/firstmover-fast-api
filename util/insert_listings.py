@@ -122,6 +122,7 @@ def insert_listings_util(perPage):
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
             if ellyns_evaluator(listing):
+                send_to_telegram(7981733149, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Ellyn match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
 
