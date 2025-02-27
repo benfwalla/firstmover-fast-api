@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
 from util.get_listings import get_listings_util
-from util.vin import vins_evaluator, ellyns_evaluator
+from util.vin import vins_evaluator
 from util.telegram import send_to_telegram
 
 # Configure logging
@@ -120,10 +120,6 @@ def insert_listings_util(perPage):
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
-
-            if ellyns_evaluator(listing):
-                send_to_telegram(7981733149, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, f"Ellyn match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
 
     logger.info(f"Prepared {len(new_listings)} new listings for upsert")
