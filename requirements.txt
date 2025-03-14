@@ -7,3 +7,4 @@ supabase
 vercel_blob
 pytz
 python-telegram-bot
+bs4
