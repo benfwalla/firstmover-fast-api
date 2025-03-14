@@ -2,7 +2,7 @@ import requests
 from fastapi import FastAPI, Depends, HTTPException, Response, Query
 
 from util.validate import validate_bearer_token
-from util.get_listings import get_listings_util
+from util.get_listings import get_listings_api_v6
 from util.insert_listings import insert_listings_util
 
 app = FastAPI()
@@ -13,7 +13,7 @@ def read_root():
 
 @app.get("/getListings")
 def get_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
-    return get_listings_util(perPage)
+    return get_listings_api_v6(perPage)
 
 
 @app.post("/insertListings")

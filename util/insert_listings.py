@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
-from util.get_listings import get_listings_util
-from util.vin import vins_evaluator
+from util.get_listings import get_listings_api_v6
+from util.vin import vins_evaluator, winstons_evaluator
 from util.telegram import send_to_telegram
 
 # Configure logging
@@ -43,7 +43,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 def insert_listings_util(perPage):
 
     try:
-        fetched_data = get_listings_util(perPage)
+        fetched_data = get_listings_api_v6(perPage)
         edges = fetched_data["data"]["searchRentals"].get("edges", [])
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error fetching listings")
@@ -120,6 +120,10 @@ def insert_listings_util(perPage):
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
+
+            if winstons_evaluator(listing):
+                send_to_telegram(7754724622, telegram_message, TELEGRAM_BOT_TOKEN)
+                send_to_telegram(-4731252559, f"Winston match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
 
     logger.info(f"Prepared {len(new_listings)} new listings for upsert")
