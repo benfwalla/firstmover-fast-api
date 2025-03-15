@@ -26,7 +26,7 @@ if not all([PROXY_USERNAME, PROXY_PASSWORD]):
     raise ValueError("Missing required proxy credentials in the environment variables.")
 
 
-def get_listings(method="v6", per_page=None):
+def fetch_listings(method="v6", per_page=None):
     """
     Fetch listings from StreetEasy using either API v6 or direct web scraping.
     :param per_page: Number of listings to fetch (only applicable for v6 method)
@@ -311,5 +311,5 @@ def parse_web_listings(html_content):
     return {}
 
 if __name__ == "__main__":
-    print(get_listings(method="v6", per_page=10))
-    print(get_listings(method="web"))
+    print(fetch_listings(method="v6", per_page=10))
+    print(fetch_listings(method="web"))
