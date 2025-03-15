@@ -125,9 +125,6 @@ def insert_listings_util(perPage):
                 send_to_telegram(7754724622, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Winston match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
-
-    logger.info(f"Prepared {len(new_listings)} new listings for upsert")
-
     if new_listings:
         try:
             response = supabase.table("listings").upsert(new_listings).execute()
