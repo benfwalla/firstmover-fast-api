@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
-from util.get_listings import get_listings_api_v6
+from util.get_listings import get_listings
 from util.vin import vins_evaluator, winstons_evaluator
 from util.telegram import send_to_telegram
 
@@ -40,10 +40,10 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
-def insert_listings_util(perPage):
+def insert_listings_util(per_page):
 
     try:
-        fetched_data = get_listings_api_v6(perPage)
+        fetched_data = get_listings(method="v6", per_page=per_page)
         edges = fetched_data.get("edges", [])
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error fetching listings")

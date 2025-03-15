@@ -1,23 +1,21 @@
 import re
 import requests
 import logging
-from fastapi import HTTPException
-import vercel_blob.blob_store
 import json
 import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+from fastapi import HTTPException
+import vercel_blob.blob_store
 
 from util.framer_five import get_framer_five
 from util.random_port import get_random_valid_port
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+# Load environment variables
 load_dotenv()
 LISTINGS_BLOB_READ_WRITE_TOKEN = os.getenv("LISTINGS_BLOB_READ_WRITE_TOKEN")
 PROXY_USERNAME = os.getenv("PROXY_USERNAME")
@@ -28,80 +26,99 @@ if not all([PROXY_USERNAME, PROXY_PASSWORD]):
     raise ValueError("Missing required proxy credentials in the environment variables.")
 
 
-def get_listings_api_v6(perPage):
-    """Gets the most recent {perPage} listings from StreetEasy using api-v6.streeteasy.com"""
+def get_listings(method="v6", per_page=None):
+    """
+    Fetch listings from StreetEasy using either API v6 or direct web scraping.
+    :param per_page: Number of listings to fetch (only applicable for v6 method)
+    :param method: "v6" for API v6 or "web" for web scraping
+    """
+    if method == "v6":
+        response_data = fetch_listings_v6(per_page)
+    elif method == "web":
+        response_data = fetch_listings_web()
+    else:
+        raise ValueError("Invalid method. Choose 'v6' or 'web'.")
+
+    framer_five_it(response_data)
+
+    return response_data
+
+
+def fetch_listings_v6(per_page):
+    """ Fetch listings using StreetEasy API v6. """
+    url = "https://api-v6.streeteasy.com/"
     payload = {
         "query": """
-            query GetAllRentalListingDetails($input: SearchRentalsInput!) {
-                searchRentals(input: $input) {
-                    search {
-                        criteria
-                    }
-                    totalCount
-                    edges {
-                        ... on OrganicRentalEdge {
-                            node {
-                                id
-                                areaName
-                                availableAt
-                                bedroomCount
-                                buildingType
-                                fullBathroomCount
-                                furnished
-                                geoPoint {
-                                    latitude
-                                    longitude
-                                }
-                                halfBathroomCount
-                                hasTour3d
-                                hasVideos
-                                isNewDevelopment
-                                leadMedia {
-                                    photo {
+                query GetAllRentalListingDetails($input: SearchRentalsInput!) {
+                    searchRentals(input: $input) {
+                        search {
+                            criteria
+                        }
+                        totalCount
+                        edges {
+                            ... on OrganicRentalEdge {
+                                node {
+                                    id
+                                    areaName
+                                    availableAt
+                                    bedroomCount
+                                    buildingType
+                                    fullBathroomCount
+                                    furnished
+                                    geoPoint {
+                                        latitude
+                                        longitude
+                                    }
+                                    halfBathroomCount
+                                    hasTour3d
+                                    hasVideos
+                                    isNewDevelopment
+                                    leadMedia {
+                                        photo {
+                                            key
+                                        }
+                                        floorPlan {
+                                            key
+                                        }
+                                        video {
+                                            imageUrl
+                                            id
+                                            provider
+                                        }
+                                        tour3dUrl
+                                    }
+                                    leaseTerm
+                                    livingAreaSize
+                                    mediaAssetCount
+                                    monthsFree
+                                    noFee
+                                    netEffectivePrice
+                                    offMarketAt
+                                    photos {
                                         key
                                     }
-                                    floorPlan {
-                                        key
+                                    price
+                                    priceChangedAt
+                                    priceDelta
+                                    sourceGroupLabel
+                                    sourceType
+                                    state
+                                    status
+                                    street
+                                    upcomingOpenHouse {
+                                        startTime
+                                        endTime
+                                        appointmentOnly
                                     }
-                                    video {
-                                        imageUrl
-                                        id
-                                        provider
-                                    }
-                                    tour3dUrl
+                                    unit
+                                    zipCode
+                                    urlPath
                                 }
-                                leaseTerm
-                                livingAreaSize
-                                mediaAssetCount
-                                monthsFree
-                                noFee
-                                netEffectivePrice
-                                offMarketAt
-                                photos {
-                                    key
-                                }
-                                price
-                                priceChangedAt
-                                priceDelta
-                                sourceGroupLabel
-                                sourceType
-                                state
-                                status
-                                street
-                                upcomingOpenHouse {
-                                    startTime
-                                    endTime
-                                    appointmentOnly
-                                }
-                                unit
-                                zipCode
-                                urlPath
                             }
                         }
                     }
                 }
-            }
-        """,
+            """,
         "variables": {
             "input": {
                 "filters": {
@@ -109,7 +126,7 @@ def get_listings_api_v6(perPage):
                     "areas": [1]
                 },
                 "page": 1,
-                "perPage": perPage,
+                "perPage": per_page,
                 "sorting": {
                     "attribute": "LISTED_AT",
                     "direction": "DESCENDING"
@@ -119,7 +136,6 @@ def get_listings_api_v6(perPage):
             }
         }
     }
-
     headers = {
         "sec-ch-ua-platform": '"macOS"',
         "x-forwarded-proto": "https",
@@ -142,104 +158,158 @@ def get_listings_api_v6(perPage):
         "priority": "u=1, i",
     }
 
-    url = "https://api-v6.streeteasy.com/"
-
-    # Construct the full proxy URL
+    # Proxy setup
     random_port = get_random_valid_port()
     proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@state.smartproxy.com:{random_port}"
-    proxies = {
-        "http": proxy_full_url,
-        "https": proxy_full_url,
-    }
-    logger.info("Fetching %s listings on Smartproxy port %s", perPage, random_port)
+    proxies = {"http": proxy_full_url, "https": proxy_full_url}
+    logger.info("Fetching %s listings on Smartproxy port %s", per_page, random_port)
 
-    # Make Request to Streeteasy
     try:
-        response = requests.request("POST", url, headers=headers, json=payload, proxies=proxies)
+        response = requests.post(url, headers=headers, json=payload, proxies=proxies)
         response.raise_for_status()
-        response = response.json()["data"]["searchRentals"]
+        response_data = response.json()["data"]["searchRentals"]
     except requests.exceptions.RequestException as e:
         logger.error("Failed to fetch from Streeteasy: %s", e)
         raise HTTPException(status_code=500, detail=f"Error: {e}")
 
-    # Blob Storage
-    try:
-        filtered_data = []
-        for edge in response["edges"]:
-            node = edge["node"]
-            filtered_data.append({
-                "photo": f"https://photos.zillowstatic.com/fp/{node['leadMedia']['photo']['key']}-se_large_800_400.webp" if node.get(
-                    "leadMedia") and node["leadMedia"].get("photo") else None,
-                "url": f"https://streeteasy.com{node.get('urlPath')}" if node.get("urlPath") else None,
-                "topLine": (
-                    f"{'${:,.0f}'.format(node.get('price')) if node.get('price') else 'Price not available'} | "
-                    f"{'No Fee' if node.get('noFee') else 'Fee Likely'} | "
-                    f"{node.get('areaName')}" if node.get("areaName") else None
-                ),
+    return response_data
 
-                "bedBathDisplay": (
-                    f"{'Studio' if node.get('bedroomCount', 0) == 0 else f'{node.get('bedroomCount', 0)} Bed'} | "
-                    f"{f'{int(node.get('fullBathroomCount', 0))} Bath' if node.get('halfBathroomCount', 0) == 0 else f'{node.get('fullBathroomCount', 0) + node.get('halfBathroomCount', 0) * 0.5:.1f} Bath'}"
-                )
-            })
+
+def fetch_listings_web():
+    """ Fetch listings directly from StreetEasy website. """
+    url = 'https://scraping.narf.ai/api/v1/'
+    params = {'api_key': SCRAPINGFISH_API_KEY, 'url': 'https://streeteasy.com/for-rent/nyc?sort_by=listed_desc'}
+
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        html_content = response.text
+    except requests.exceptions.RequestException as e:
+        logger.error("Failed to fetch from Streeteasy: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error: {e}")
+
+    return parse_web_listings(html_content)
+
+
+def framer_five_it(response_data):
+    """Places the five most recent listings in a blob for marketing site
+    Returns the response data as well for future automation."""
+    try:
+        filtered_data = [
+            {
+                "id": node.get("id"),
+                "areaName": node.get("areaName"),
+                "availableAt": node.get("availableAt"),
+                "bedroomCount": node.get("bedroomCount"),
+                "fullBathroomCount": node.get("fullBathroomCount"),
+                "halfBathroomCount": node.get("halfBathroomCount"),
+                "noFee": node.get("noFee"),
+                "price": node.get("price"),
+                "zipCode": node.get("zipCode"),
+                "urlPath": node.get("urlPath"),
+                "leadMedia": node.get("leadMedia"),
+            }
+            for edge in response_data.get("edges", []) for node in [edge.get("node", {})]
+        ]
 
         blob_json = get_framer_five(filtered_data)
-
-        resp = vercel_blob.blob_store.put('latest_listings.json',
-                                          json.dumps(blob_json).encode('utf-8'),
-                                          options={"token": LISTINGS_BLOB_READ_WRITE_TOKEN,
-                                                   "addRandomSuffix": False,
-                                                   "cacheControlMaxAge": "0"}
-                                          )
+        vercel_blob.blob_store.put(
+            'latest_listings.json',
+            json.dumps(blob_json).encode('utf-8'),
+            options={"token": LISTINGS_BLOB_READ_WRITE_TOKEN, "addRandomSuffix": False, "cacheControlMaxAge": "0"}
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"BlobError: {e}")
 
-    return response
+    logger.info("Framer Five blob updated")
 
 
-def get_listings_web():
-    """Fetches the most recent listings from StreetEasy directly from the website."""
-    url = 'https://scraping.narf.ai/api/v1/'
-    params = {
-        'api_key': SCRAPINGFISH_API_KEY,
-        'url': 'https://streeteasy.com/for-rent/nyc?sort_by=listed_desc'
-    }
-
-    response = requests.get(url, params=params)
-    if response.status_code != 200:
-        raise Exception(f"Failed to fetch data: {response.status_code}")
-
-    html_content = response.text
-
-    # Use BeautifulSoup to parse the HTML content
+def parse_web_listings(html_content):
+    """ Parse listings from StreetEasy web page with full response details. """
     soup = BeautifulSoup(html_content, 'html.parser')
+    new_listings_url_paths = []
+    ul = soup.find('ul', class_='sc-541ed69f-0')
+    if not ul:
+        return []
 
-    # Find all script tags
+    for li in ul.find_all('li', class_='sc-541ed69f-1'):
+        if li.find('p', class_='ImageContainerFooter-module__sponsoredTag___pzzz-') or \
+                li.find('span', {'data-testid': 'tag-text'}, string='Featured'):
+            continue
+
+        address_tag = li.find('a', class_='ListingDescription-module__addressTextAction___xAFZJ')
+        if address_tag:
+            new_listings_url_paths.append(address_tag['href'].replace("https://streeteasy.com", ""))
+
     script_tags = soup.find_all('script')
-
-    # Look for the script tag containing 'listingData'
     for script in script_tags:
         if script.string and 'listingData' in script.string:
-
             try:
-                script_content = script.string
-                cleaned = re.sub(r'^self\.__next_f\.push\(', '', script_content)
+                cleaned = re.sub(r'^self\.__next_f\.push\(', '', script.string)
                 cleaned = re.sub(r'\)[;\s]*$', '', cleaned)
                 cleaned = re.sub(r'\$[A-Za-z0-9_]+', 'null', cleaned)
-                cleaned = re.sub(r',\s*([\}\]])', r'\1', cleaned)
+                cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)
 
                 data = json.loads(cleaned)[1]
                 data = data.split(":", 1)[1]
                 data = json.loads(data)[3]
 
                 listing_data = data.get("children")[3].get("listingData")
+                filtered_edges = []
+                for edge in listing_data.get('edges', []):
+                    node = edge.get('node', {})
+                    url_path = node.get('urlPath')
+                    if url_path in new_listings_url_paths:
+                        photos = node.get("photos")
+                        lead_media = {"photo": {"key": photos[0]["key"]}} if photos else None
 
-                return listing_data
+                        mapped_node = {
+                            "id": node.get("id"),
+                            "areaName": node.get("areaName"),
+                            "availableAt": node.get("availableAt"),
+                            "bedroomCount": node.get("bedroomCount"),
+                            "buildingType": node.get("buildingType"),
+                            "fullBathroomCount": node.get("fullBathroomCount"),
+                            "furnished": node.get("furnished"),
+                            "geoPoint": node.get("geoPoint"),
+                            "halfBathroomCount": node.get("halfBathroomCount"),
+                            "hasTour3d": node.get("hasTour3d"),
+                            "hasVideos": node.get("hasVideos"),
+                            "isNewDevelopment": node.get("isNewDevelopment"),
+                            "leadMedia": lead_media,
+                            "leaseTerm": node.get("leaseTerm"),
+                            "livingAreaSize": node.get("livingAreaSize"),
+                            "mediaAssetCount": len(photos),
+                            "monthsFree": node.get("monthsFree"),
+                            "noFee": node.get("noFee"),
+                            "netEffectivePrice": node.get("netEffectivePrice"),
+                            "offMarketAt": node.get("offMarketAt"),
+                            "photos": None if not photos else [{"key": p["key"]} for p in photos],
+                            "price": node.get("price"),
+                            "priceChangedAt": node.get("priceChangedAt"),
+                            "priceDelta": node.get("priceDelta"),
+                            "sourceGroupLabel": node.get("sourceGroupLabel"),
+                            "sourceType": node.get("sourceType"),
+                            "state": node.get("state"),
+                            "status": node.get("status"),
+                            "street": node.get("street"),
+                            "upcomingOpenHouse": node.get("upcomingOpenHouse"),
+                            "unit": node.get("unit"),
+                            "zipCode": node.get("zipCode"),
+                            "urlPath": node.get("urlPath")
+                        }
+                        filtered_edges.append({"node": mapped_node})
 
+                return {
+                    'search': listing_data.get('search'),
+                    'totalCount': listing_data.get('totalCount'),
+                    'edges': filtered_edges,
+                    'pageInfo': listing_data.get('pageInfo')
+                }
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Error: {e}")
-
+    return {}
 
 if __name__ == "__main__":
-    print(get_listings_api_v6(10))
-    print(get_listings_web())
+    print(get_listings(method="v6", per_page=10))
+    print(get_listings(method="web"))
