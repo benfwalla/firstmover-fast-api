@@ -1,3 +1,4 @@
+import re
 import requests
 import logging
 from fastapi import HTTPException
@@ -156,6 +157,7 @@ def get_listings_api_v6(perPage):
     try:
         response = requests.request("POST", url, headers=headers, json=payload, proxies=proxies)
         response.raise_for_status()
+        response = response.json()["data"]["searchRentals"]
     except requests.exceptions.RequestException as e:
         logger.error("Failed to fetch from Streeteasy: %s", e)
         raise HTTPException(status_code=500, detail=f"Error: {e}")
@@ -163,7 +165,7 @@ def get_listings_api_v6(perPage):
     # Blob Storage
     try:
         filtered_data = []
-        for edge in response.json()["data"]["searchRentals"]["edges"]:
+        for edge in response["edges"]:
             node = edge["node"]
             filtered_data.append({
                 "photo": f"https://photos.zillowstatic.com/fp/{node['leadMedia']['photo']['key']}-se_large_800_400.webp" if node.get(
@@ -192,88 +194,52 @@ def get_listings_api_v6(perPage):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"BlobError: {e}")
 
-    return response.json()
+    return response
 
 
 def get_listings_web():
-    """Gets the most recent listings from StreetEasy directly from the website"""
+    """Fetches the most recent listings from StreetEasy directly from the website."""
     url = 'https://scraping.narf.ai/api/v1/'
     params = {
         'api_key': SCRAPINGFISH_API_KEY,
         'url': 'https://streeteasy.com/for-rent/nyc?sort_by=listed_desc'
     }
+
     response = requests.get(url, params=params)
-    html = response.text
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch data: {response.status_code}")
 
-    soup = BeautifulSoup(html, 'html.parser')
-    listings = []
+    html_content = response.text
 
-    ul = soup.find('ul', class_='sc-541ed69f-0')
-    if not ul:
-        return []
+    # Use BeautifulSoup to parse the HTML content
+    soup = BeautifulSoup(html_content, 'html.parser')
 
-    for li in ul.find_all('li', class_='sc-541ed69f-1'):
-        # Skip Sponsored and Featured listings
-        if li.find('p', class_='ImageContainerFooter-module__sponsoredTag___pzzz-') or \
-           li.find('span', {'data-testid': 'tag-text'}, string='Featured'):
-            continue
+    # Find all script tags
+    script_tags = soup.find_all('script')
 
-        listing = {}
+    # Look for the script tag containing 'listingData'
+    for script in script_tags:
+        if script.string and 'listingData' in script.string:
 
-        # Extract URL and Address
-        address_tag = li.find('a', class_='ListingDescription-module__addressTextAction___xAFZJ')
-        if address_tag:
-            listing['street'] = address_tag.text.strip()
-            listing['url_path'] = address_tag['href'].replace("https://streeteasy.com", "")
+            try:
+                script_content = script.string
+                cleaned = re.sub(r'^self\.__next_f\.push\(', '', script_content)
+                cleaned = re.sub(r'\)[;\s]*$', '', cleaned)
+                cleaned = re.sub(r'\$[A-Za-z0-9_]+', 'null', cleaned)
+                cleaned = re.sub(r',\s*([\}\]])', r'\1', cleaned)
 
-        # Extract Area Name
-        area_tag = li.find('p', class_='Caps_base_LkkqI')
-        if area_tag:
-            listing['area_name'] = area_tag.text.strip().split(' in ')[-1]
+                data = json.loads(cleaned)[1]
+                data = data.split(":", 1)[1]
+                data = json.loads(data)[3]
 
-        # Extract Price
-        price_tag = li.find('span', class_='PriceInfo-module__price___gf-El')
-        if price_tag:
-            listing['price'] = int(price_tag.text.replace('$', '').replace(',', '').strip())
+                listing_data = data.get("children")[3].get("listingData")
 
-        # Extract No Fee status
-        no_fee_tag = li.find('span', {'data-testid': 'tag-text'}, string='NO FEE')
-        listing['no_fee'] = bool(no_fee_tag)
+                return listing_data
 
-        # Extract Bedroom and Bathroom Counts
-        bed_bath_list = li.find_all('span', class_='BedsBathsSqft-module__text___lnveO')
-        listing['bedroom_count'] = None
-        listing['full_bathroom_count'] = None
-        listing['half_bathroom_count'] = 0
-
-        if bed_bath_list:
-            for item in bed_bath_list:
-                text = item.text.strip()
-                if 'Studio' in text:
-                    listing['bedroom_count'] = 0
-                elif 'bed' in text:
-                    listing['bedroom_count'] = int(text.split(' ')[0])
-                elif 'bath' in text:
-                    try:
-                        bath_count = float(text.split(' ')[0])
-                        listing['full_bathroom_count'] = int(bath_count)
-                        listing['half_bathroom_count'] = int((bath_count - int(bath_count)) * 2)
-                    except ValueError:
-                        listing['full_bathroom_count'] = None
-                        listing['half_bathroom_count'] = 0
-
-        # Extract Lead Media Photo
-        image_tag = li.find('img', class_='CardImage-module__cardImage___cirIN')
-        if image_tag:
-            listing['lead_media_photo'] = image_tag['src']
-
-        listings.append(listing)
-
-    return listings
-
-
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error: {e}")
 
 
 if __name__ == "__main__":
-    #print(get_listings_api_v6(10))
+    print(get_listings_api_v6(10))
     print(get_listings_web())

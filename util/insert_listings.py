@@ -44,7 +44,7 @@ def insert_listings_util(perPage):
 
     try:
         fetched_data = get_listings_api_v6(perPage)
-        edges = fetched_data["data"]["searchRentals"].get("edges", [])
+        edges = fetched_data.get("edges", [])
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error fetching listings")
 
@@ -140,3 +140,7 @@ def insert_listings_util(perPage):
 
     logger.debug("New listings: %s", new_listings)
     return {"newListings": new_listings}
+
+
+if __name__ == "__main__":
+    print(insert_listings_util(10))
