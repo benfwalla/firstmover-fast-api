@@ -41,12 +41,22 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 def insert_listings_util(per_page):
-
-    try:
-        fetched_data = fetch_listings(method="v6", per_page=per_page)
-        edges = fetched_data.get("edges", [])
-    except Exception as e:
-        raise HTTPException(status_code=500, detail="Error fetching listings")
+    # Try to fetch listings using v6 API first
+    methods = [
+        {"name": "v6", "params": {"method": "v6", "per_page": per_page}},
+        {"name": "web", "params": {"method": "web"}}
+    ]
+    for method in methods:
+        try:
+            fetched_data = fetch_listings(**method["params"])
+            edges = fetched_data.get("edges", [])
+            logger.info(f"Successfully fetched listings using {method['name']} method")
+            break
+        except Exception as e:
+            logger.warning(f"{method['name']} method failed: {e}")
+            if method["name"] == "web":  # If this was the last method to try
+                logger.error("All fetch methods failed")
+                raise HTTPException(status_code=500, detail="Error fetching listings from all methods")
 
     latest_ids = [edge["node"]["id"] for edge in edges]
 
