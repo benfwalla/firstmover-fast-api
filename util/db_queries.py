@@ -51,6 +51,8 @@ def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_pri
 
     return response.data
 
+# TODO: Add a function where given a new listing, we query all of the customer searches and the ids and FCM tokens of the users
+
 
 if __name__ == "__main__":
     print(match_listings_given_customer_search(customer_search_id = 29, last_x_days = 1))
