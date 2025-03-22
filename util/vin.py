@@ -42,13 +42,12 @@ def winstons_evaluator(listing):
     """
     # Define vin's search criteria
     allowed_areas = {
-        "Kips Bay", "Gramercy Park", "Astoria", "Hell's Kitchen", "Upper West Side", "Upper East Side", "East Village",
-        "Prospect Heights", "Clinton Hill"
+        "Kips Bay", "Astoria", "Hell's Kitchen", "East Village"
     }
 
     max_price = 3500
-    max_bedroom_count = 2
-    min_bedroom_count = 1
+    max_bedroom_count = 1
+    min_bedroom_count = 0
 
     # Check if listing satisfies the criteria
     return (
