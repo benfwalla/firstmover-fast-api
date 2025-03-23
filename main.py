@@ -1,9 +1,10 @@
 import requests
-from fastapi import FastAPI, Depends, HTTPException, Response, Query
+from fastapi import FastAPI, Request, Depends, HTTPException, Response
 
 from util.validate import validate_bearer_token
 from util.get_listings import fetch_listings
 from util.insert_listings import insert_listings_util
+from util.db_queries import get_avg_listings_last_14_days_by_name
 
 app = FastAPI()
 
@@ -20,6 +21,20 @@ def get_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
 def insert_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
     return insert_listings_util(perPage)
 
+@app.post("/getAvgListingsLast14Days")
+async def get_avg_listings_last_14_days(
+    request: Request,
+    _: bool = Depends(validate_bearer_token)
+):
+    body = await request.json()
+    return get_avg_listings_last_14_days_by_name(
+        neighborhood_names=body["neighborhood_names"],
+        min_price=body["min_price"],
+        max_price=body["max_price"],
+        bedrooms=body["bedrooms"],
+        min_bathroom=body["min_bathroom"],
+        broker_fees=body["broker_fees"]
+    )
 
 @app.options("/getFramerBlob")
 def options_blob(response: Response):
