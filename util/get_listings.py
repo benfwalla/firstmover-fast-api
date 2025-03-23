@@ -216,7 +216,6 @@ def framer_five_it(response_data):
         ]
 
         blob_json = get_framer_five(filtered_data)
-        logger.info(blob_json)
         vercel_blob.blob_store.put(
             'latest_listings.json',
             json.dumps(blob_json).encode('utf-8'),
