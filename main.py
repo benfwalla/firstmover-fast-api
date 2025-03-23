@@ -36,7 +36,7 @@ async def get_avg_listings_last_14_days(request: Request):
 @app.options("/getAvgListingsLast14Days")
 def options_avg_listings_last_14_days(response: Response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return {}
 
