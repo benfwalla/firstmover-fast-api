@@ -22,10 +22,7 @@ def insert_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token))
     return insert_listings_util(perPage)
 
 @app.post("/getAvgListingsLast14Days")
-async def get_avg_listings_last_14_days(
-    request: Request,
-    _: bool = Depends(validate_bearer_token)
-):
+async def get_avg_listings_last_14_days(request: Request):
     body = await request.json()
     return get_avg_listings_last_14_days_by_name(
         neighborhood_names=body["neighborhood_names"],
