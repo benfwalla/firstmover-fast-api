@@ -1,5 +1,6 @@
 import requests
 from fastapi import FastAPI, Request, Depends, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 from util.validate import validate_bearer_token
 from util.get_listings import fetch_listings
@@ -7,6 +8,14 @@ from util.insert_listings import insert_listings_util
 from util.db_queries import get_avg_listings_last_14_days_by_name
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
