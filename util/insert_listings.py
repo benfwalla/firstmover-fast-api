@@ -7,6 +7,7 @@ from supabase import create_client, Client
 from util.get_listings import fetch_listings
 from util.vin import vins_evaluator, winstons_evaluator
 from util.telegram import send_to_telegram
+from util.push_notification import send_push_notification
 
 # Configure logging
 logging.basicConfig(
@@ -131,9 +132,12 @@ def insert_listings_util(per_page):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
-            if winstons_evaluator(listing):
-                send_to_telegram(7754724622, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, f"Winston match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
+            send_push_notification(
+                to=["ExponentPushToken[foFY-DLpiHc9EhTNDwwR8G]"],
+                title=f"New Listing in {listing['area_name']}",
+                body=f"${listing['price']:,} | {bedroom_display} | {total_bathrooms} Bath",
+                data_url=f"https://streeteasy.com{listing['url_path']}"
+            )
 
     if new_listings:
         try:
