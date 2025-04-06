@@ -4,10 +4,13 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
+from urllib3.util.ssl_match_hostname import match_hostname
+
 from util.get_listings import fetch_listings
 from util.vin import vins_evaluator, winstons_evaluator
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
+from util.db_queries import find_matching_customers
 
 # Configure logging
 logging.basicConfig(
@@ -67,7 +70,7 @@ def insert_listings_util(per_page):
         last_ids = last_ids_raw.split(",") if last_ids_raw else []
         # Find new IDs (not present in last_ids from Redis)
         new_ids = [id for id in latest_ids if id not in last_ids]
-        logger.info(f"{len(new_ids)} of those IDs are new")
+        logger.info(f"Got {len(new_ids)} new listings: {new_ids}")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail="Error doing Redis comparison")
@@ -132,12 +135,27 @@ def insert_listings_util(per_page):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
-            send_push_notification(
-                to=["ExponentPushToken[foFY-DLpiHc9EhTNDwwR8G]"],
-                title=f"New Listing in {listing['area_name']}",
-                body=f"${listing['price']:,} | {bedroom_display} | {total_bathrooms} Bath",
-                data_url=f"https://streeteasy.com{listing['url_path']}"
-            )
+            matched_customers = find_matching_customers(
+                listing["area_name"],
+                listing["bedroom_count"],
+                total_bathrooms,
+                listing["price"],
+                not listing.get("no_fee", False))
+
+            logger.info(f"Found {len(matched_customers)} matching customers on listing {listing['id']}")
+
+            if matched_customers:
+
+                matched_customers_device_tokens = [customer["device_token"] for customer in matched_customers]
+
+                send_push_notification(
+                    to=matched_customers_device_tokens,
+                    title=f"New Listing in {listing['area_name']}",
+                    body=f"${listing['price']:,} | {bedroom_display} | {total_bathrooms} Bath",
+                    data_url=f"https://streeteasy.com{listing['url_path']}"
+                )
+
+            # TODO: Add a record to customer_matches
 
     if new_listings:
         try:

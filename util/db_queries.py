@@ -51,7 +51,26 @@ def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_pri
 
     return response.data
 
-# TODO: Add a function where given a new listing, we query all of the customer searches and the ids and FCM tokens of the users
+def find_matching_customers(area_name, bedroom_count, bathroom_count, price, broker_fees):
+    """
+    Given user inputs of search criteria, return an array of device tokens of customers that match
+    :param area_name:
+    :param bedroom_count:
+    :param bathroom_count:
+    :param price:
+    :param broker_fees:
+    :return: an array of dictionaries containing 'customer_search_id', 'device_token', and 'user_id'
+    """
+
+    response = supabase.rpc("find_matching_customers", {
+        "p_area_name": area_name,
+        "p_bedroom_count": bedroom_count,
+        "p_bathroom_count": bathroom_count,
+        "p_price": price,
+        "p_no_fee": broker_fees
+    }).execute()
+
+    return response.data
 
 
 if __name__ == "__main__":
@@ -70,3 +89,5 @@ if __name__ == "__main__":
     )
 
     print(avg_listings)
+
+    print(find_matching_customers("West Chelsea", 1, 1.0, 2362, False))
