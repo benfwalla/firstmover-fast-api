@@ -22,8 +22,8 @@ def read_root():
     return {"message": "Bloop bloop welcome to the FirstMover API!"}
 
 @app.get("/getListings")
-def get_listings(perPage: int = 25, _: bool = Depends(validate_bearer_token)):
-    return fetch_listings(method="v6", per_page=perPage)
+def get_listings(perPage: int = 25, method: str = "v6", _: bool = Depends(validate_bearer_token)):
+    return fetch_listings(method=method, per_page=perPage)
 
 
 @app.post("/insertListings")
