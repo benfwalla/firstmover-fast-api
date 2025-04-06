@@ -4,13 +4,12 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from upstash_redis import Redis
 from supabase import create_client, Client
-from urllib3.util.ssl_match_hostname import match_hostname
 
 from util.get_listings import fetch_listings
 from util.vin import vins_evaluator, winstons_evaluator
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
-from util.db_queries import find_matching_customers
+from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
 
 # Configure logging
 logging.basicConfig(
@@ -77,6 +76,8 @@ def insert_listings_util(per_page):
 
     # Prepare new listings for upsert
     new_listings = []
+    new_matches = []
+
     for edge in edges:
         node = edge["node"]
         if node.get("id") in new_ids:
@@ -146,8 +147,8 @@ def insert_listings_util(per_page):
 
             if matched_customers:
 
+                # Send push notifications
                 matched_customers_device_tokens = [customer["device_token"] for customer in matched_customers]
-
                 send_push_notification(
                     to=matched_customers_device_tokens,
                     title=f"New Listing in {listing['area_name']}",
@@ -155,17 +156,17 @@ def insert_listings_util(per_page):
                     data_url=f"https://streeteasy.com{listing['url_path']}"
                 )
 
-            # TODO: Add a record to customer_matches
+                new_matches.extend(
+                    {"user_id": customer["user_id"], "listing_id": listing["id"]}
+                    for customer in matched_customers
+                )
 
     if new_listings:
-        try:
-            response = supabase.table("listings").upsert(new_listings).execute()
-            logger.info(f"Supabase upsert successful!")
-        except Exception as e:
-            logger.error(f"Error during Supabase upsert: {e}")
-            raise HTTPException(status_code=500, detail=f"Supabase Error: {e}")
-
+        upsert_new_listings(new_listings)
         redis.set("last_ids", ",".join(latest_ids))
+
+    if new_matches:
+        insert_customer_matches(new_matches)
 
     logger.debug("New listings: %s", new_listings)
     return {"newListings": new_listings}

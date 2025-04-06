@@ -1,8 +1,20 @@
 import os
+import logging
+from fastapi import HTTPException
 from dotenv import load_dotenv
+from datetime import datetime, timezone
 from supabase import create_client
 
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -73,21 +85,50 @@ def find_matching_customers(area_name, bedroom_count, bathroom_count, price, bro
     return response.data
 
 
+def upsert_new_listings(new_listings):
+    try:
+        response = supabase.table("listings").upsert(new_listings).execute()
+        logger.info(f"Supabase upsert successful!")
+        return response
+    except Exception as e:
+        logger.error(f"Error during Supabase upsert: {e}")
+        raise HTTPException(status_code=500, detail=f"Supabase Error: {e}")
+
+
+def insert_customer_matches(matches_dict: [dict]):
+    try:
+        now = datetime.now(timezone.utc).isoformat()
+        payload = [
+            {**match, "created_at": now}
+            for match in matches_dict
+        ]
+
+        response = supabase.table("customer_matches").insert(payload).execute()
+        return response
+    except Exception as exception:
+        return exception
+
+
 if __name__ == "__main__":
-    print(match_listings_given_customer_search(customer_search_id = 29, last_x_days = 1))
-    print(get_avg_listings_last_14_days(29))
-
-    avg_listings = get_avg_listings_last_14_days_by_name(
-        neighborhood_names = ["Kips Bay", "Gramercy Park", "Astoria", "Hell's Kitchen",
-         "Upper West Side", "Upper East Side", "East Village",
-         "Prospect Heights", "Clinton Hill"],
-        min_price = 0,
-        max_price=3500,
-        bedrooms=[1, 2],
-        min_bathroom=1,
-        broker_fees="fees_ok"
-    )
-
-    print(avg_listings)
-
+    # print(match_listings_given_customer_search(customer_search_id = 29, last_x_days = 1))
+    # print(get_avg_listings_last_14_days(29))
+    #
+    # avg_listings = get_avg_listings_last_14_days_by_name(
+    #     neighborhood_names = ["Kips Bay", "Gramercy Park", "Astoria", "Hell's Kitchen",
+    #      "Upper West Side", "Upper East Side", "East Village",
+    #      "Prospect Heights", "Clinton Hill"],
+    #     min_price = 0,
+    #     max_price=3500,
+    #     bedrooms=[1, 2],
+    #     min_bathroom=1,
+    #     broker_fees="fees_ok"
+    # )
+    #
+    # print(avg_listings)
+    #
     print(find_matching_customers("West Chelsea", 1, 1.0, 2362, False))
+
+    print(insert_customer_matches([
+        {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3923478},
+        {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3692174}
+    ]))
