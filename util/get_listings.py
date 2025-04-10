@@ -39,7 +39,7 @@ def fetch_listings(method="v6", per_page=None):
     else:
         raise ValueError("Invalid method. Choose 'v6' or 'web'.")
 
-    framer_five_it(response_data)
+    # framer_five_it(response_data)
 
     return response_data
 
