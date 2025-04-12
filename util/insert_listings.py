@@ -6,7 +6,7 @@ from upstash_redis import Redis
 from supabase import create_client, Client
 
 from util.get_listings import fetch_listings
-from util.vin import vins_evaluator, winstons_evaluator
+from util.vin import vins_evaluator, marnies_evaluator
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
 from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
@@ -135,6 +135,10 @@ def insert_listings_util(per_page):
             if vins_evaluator(listing):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
+
+            if marnies_evaluator(listing):
+                send_to_telegram(8113024736, telegram_message, TELEGRAM_BOT_TOKEN)
+                send_to_telegram(-4731252559, f"Marnie match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
             matched_customers = find_matching_customers(
                 listing["area_name"],

@@ -55,3 +55,23 @@ def winstons_evaluator(listing):
             0 <= listing.get("price", float('inf')) <= max_price and
             min_bedroom_count <= listing.get("bedroom_count", float('inf')) <= max_bedroom_count
     )
+
+def marnies_evaluator(listing):
+    """
+    Evaluates if a listing matches Marnie's search criteria.
+    """
+    # Define vin's search criteria
+    allowed_areas = {
+        "Williamsburg", "Greenpoint"
+    }
+
+    min_price = 2500
+    max_price = 3500
+    min_bedroom_count = 0
+
+    # Check if listing satisfies the criteria
+    return (
+            listing.get("area_name") in allowed_areas and
+            min_price <= listing.get("price", float('inf')) <= max_price and
+            min_bedroom_count < listing.get("bedroom_count", float('inf'))
+    )
