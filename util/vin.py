@@ -62,7 +62,7 @@ def marnies_evaluator(listing):
     """
     # Define vin's search criteria
     allowed_areas = {
-        "Williamsburg", "Greenpoint"
+        "Williamsburg", "East Williamsburg", "Greenpoint"
     }
 
     min_price = 2500
