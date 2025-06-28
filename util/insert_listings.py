@@ -139,10 +139,6 @@ def insert_listings_util(per_page):
                 send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
                 send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
-            if marnies_evaluator(listing):
-                send_to_telegram(8113024736, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, f"Marnie match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
-
             jolie_criteria = {
                 "allowed_areas": {
                     "Noho", "Hudson Square", "Soho", "East Village", "Gramercy Park", "Kips Bay",
