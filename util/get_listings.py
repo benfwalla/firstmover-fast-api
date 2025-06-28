@@ -1,4 +1,6 @@
 import re
+import sys
+
 import requests
 import logging
 import json
@@ -12,7 +14,7 @@ from util.framer_five import get_framer_five
 from util.random_port import get_random_valid_port
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
