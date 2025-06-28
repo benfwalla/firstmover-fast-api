@@ -1,5 +1,7 @@
 import os
 import logging
+import sys
+
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from upstash_redis import Redis
@@ -14,7 +16,8 @@ from util.db_queries import upsert_new_listings, insert_customer_matches, find_m
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
 
