@@ -56,7 +56,8 @@ def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_pri
         "p_min_price": min_price,
         "p_max_price": max_price,
         "p_bedrooms": bedrooms,
-        "p_min_bathroom": min_bathroom
+        "p_min_bathroom": min_bathroom,
+        "p_broker_fees": False
     }).execute()
 
     return response.data
