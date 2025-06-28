@@ -38,8 +38,7 @@ async def get_avg_listings_last_14_days(request: Request):
         min_price=body["min_price"],
         max_price=body["max_price"],
         bedrooms=body["bedrooms"],
-        min_bathroom=body["min_bathroom"],
-        broker_fees=body["broker_fees"]
+        min_bathroom=body["min_bathroom"]
     )
 
 @app.options("/getAvgListingsLast14Days")

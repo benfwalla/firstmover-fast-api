@@ -46,8 +46,7 @@ def get_avg_listings_last_14_days(customer_search_id):
     return response.data
 
 
-def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_price, bedrooms, min_bathroom,
-                                          broker_fees):
+def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_price, bedrooms, min_bathroom):
     """
     Given user inputs of search criteria, return the average number of listings in the last 14 days.
     :return: a float representing the average number of listings (i.e. 22.8667)
@@ -57,8 +56,7 @@ def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_pri
         "p_min_price": min_price,
         "p_max_price": max_price,
         "p_bedrooms": bedrooms,
-        "p_min_bathroom": min_bathroom,
-        "p_broker_fees": broker_fees
+        "p_min_bathroom": min_bathroom
     }).execute()
 
     return response.data
