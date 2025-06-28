@@ -13,6 +13,17 @@ from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
 from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
 
+
+import io
+
+class StderrLogger(io.StringIO):
+    def write(self, msg):
+        # Only log meaningful non-empty lines
+        if msg.strip():
+            logging.getLogger("stderr").warning(f"STDERR: {msg.strip()}")
+
+sys.stderr = StderrLogger()
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
