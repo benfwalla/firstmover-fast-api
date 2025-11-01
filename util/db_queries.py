@@ -79,6 +79,21 @@ def find_matching_customers(area_name, bedroom_count, bathroom_count, price, bro
             print("Yoooooo Im in Queens!!")
             area_name = "Murray Hill (Queens)"
 
+    if area_name == "Bay Terrace":
+        if str(zip_code).startswith("11"):
+            print("Yoooooo Im in Queens!!")
+            area_name = "Bay Terrace (Queens)"
+
+    if area_name == "Sunnyside":
+        if str(zip_code).startswith("10"):
+            print("Enter the Shaolin... Staten Island!")
+            area_name = "Sunnyside (Staten Island)"
+
+    if area_name == "Chelsea":
+        if str(zip_code).startswith("103"):
+            print("Enter the Shaolin... Staten Island!")
+            area_name = "Chelsea (Staten Island)"
+
     response = supabase.rpc("find_matching_customers", {
         "p_area_name": area_name,
         "p_bedroom_count": bedroom_count,
