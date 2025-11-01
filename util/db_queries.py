@@ -62,16 +62,22 @@ def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_pri
 
     return response.data
 
-def find_matching_customers(area_name, bedroom_count, bathroom_count, price, broker_fees):
+def find_matching_customers(area_name, bedroom_count, bathroom_count, price, broker_fees, zip_code=None):
     """
-    Given user inputs of search criteria, return an array of device tokens of customers that match
+    Given attributes of a listing, return an array of device tokens of customers that match
     :param area_name:
     :param bedroom_count:
     :param bathroom_count:
     :param price:
     :param broker_fees:
+    :param zip_code:
     :return: an array of dictionaries containing 'customer_search_id', 'device_token', and 'user_id'
     """
+
+    if area_name == "Murray Hill":
+        if str(zip_code).startswith("11"):
+            print("Yoooooo Im in Queens!!")
+            area_name = "Murray Hill (Queens)"
 
     response = supabase.rpc("find_matching_customers", {
         "p_area_name": area_name,
@@ -125,9 +131,10 @@ if __name__ == "__main__":
     #
     # print(avg_listings)
     #
-    print(find_matching_customers("West Chelsea", 1, 1.0, 2362, False))
+    print(find_matching_customers("Murray Hill", 1, 1.0, 2362, False, 100016))
+    print(find_matching_customers("Murray Hill", 1, 1.0, 2362, False, 11354))
 
-    print(insert_customer_matches([
-        {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3923478},
-        {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3692174}
-    ]))
+    # print(insert_customer_matches([
+    #     {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3923478},
+    #     {"user_id": "1055a8e4-9ed6-4559-9d71-a2712e25d591", "listing_id": 3692174}
+    # ]))

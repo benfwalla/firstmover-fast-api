@@ -159,7 +159,8 @@ def insert_listings_util(per_page):
                 listing["bedroom_count"],
                 total_bathrooms,
                 listing["price"],
-                not listing.get("no_fee", False))
+                not listing.get("no_fee", False),
+                listing.get("zip_code"))
 
             logger.info(f"Found {len(matched_customers)} matching customers on listing {listing['id']}")
 
