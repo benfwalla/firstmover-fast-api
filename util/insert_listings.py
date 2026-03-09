@@ -168,7 +168,8 @@ def insert_listings_util(per_page):
                     to=matched_customers_device_tokens,
                     title=f"New Listing in {listing['area_name']}",
                     body=f"${listing['price']:,} | {bedroom_display} | {total_bathrooms} Bath",
-                    data_url=f"https://streeteasy.com{listing['url_path']}"
+                    data_url=f"https://streeteasy.com{listing['url_path']}",
+                    listing_id=listing['id']
                 )
 
                 new_matches.extend(

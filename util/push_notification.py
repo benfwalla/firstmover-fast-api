@@ -1,7 +1,7 @@
 import requests
 import json
 
-def send_push_notification(to: [str], title, body, data_url):
+def send_push_notification(to: [str], title, body, data_url, listing_id=None):
     url = "https://api.expo.dev/v2/push/send"
     headers = {'Content-Type': 'application/json'}
     responses = []
@@ -15,7 +15,8 @@ def send_push_notification(to: [str], title, body, data_url):
             "body": body,
             "sound": "default",
             "data": {
-                "url": data_url
+                "url": data_url,
+                "listingId": str(listing_id) if listing_id else None
             }
         })
 
