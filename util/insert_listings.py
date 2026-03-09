@@ -8,7 +8,7 @@ from upstash_redis import Redis
 from supabase import create_client, Client
 
 from util.get_listings import fetch_listings
-from util.vin import vins_evaluator, marnies_evaluator, evaluate_listing
+from util.vin import evaluate_listing
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
 from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
@@ -134,10 +134,6 @@ def insert_listings_util(per_page):
                 f"{bedroom_display} | {total_bathrooms} Bath\n"
                 f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
             )
-
-            if vins_evaluator(listing):
-                send_to_telegram(1138345693, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, f"Vin match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
             jolie_criteria = {
                 "allowed_areas": {

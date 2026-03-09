@@ -1,5 +1,4 @@
-import requests
-from fastapi import FastAPI, Request, Depends, HTTPException, Response
+from fastapi import FastAPI, Request, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from util.validate import validate_bearer_token
@@ -48,38 +47,4 @@ def options_avg_listings_last_14_days(response: Response):
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     return {}
 
-@app.options("/getFramerBlob")
-def options_blob(response: Response):
-    # Handle preflight `OPTIONS` requests for /getBlob
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-    return {}
-
-
-@app.get("/getFramerBlob")
-def get_blob(response: Response):
-
-    blob_url = "https://591qwi72as9qsy9j.public.blob.vercel-storage.com/latest_listings.json"
-
-    try:
-        # Fetch the blob content using requests
-        blob_response = requests.get(blob_url)
-
-        if blob_response.status_code != 200:
-            raise HTTPException(
-                status_code=blob_response.status_code,
-                detail=f"Failed to fetch blob: {blob_response.reason}",
-            )
-
-        # Add required CORS headers
-        response.headers["Access-Control-Allow-Origin"] = "*"
-        response.headers["Access-Control-Allow-Methods"] = "GET, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-
-        # Return the flattened data directly in the response
-        return blob_response.json()
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching blob: {str(e)}")
 

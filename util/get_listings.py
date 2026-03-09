@@ -8,9 +8,6 @@ import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 from fastapi import HTTPException
-import vercel_blob.blob_store
-
-from util.framer_five import get_framer_five
 from util.random_port import get_random_valid_port
 
 # Configure logging
@@ -19,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-LISTINGS_BLOB_READ_WRITE_TOKEN = os.getenv("LISTINGS_BLOB_READ_WRITE_TOKEN")
 PROXY_USERNAME = os.getenv("PROXY_USERNAME")
 PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")
 SCRAPINGFISH_API_KEY = os.getenv("SCRAPINGFISH_API_KEY")
@@ -40,8 +36,6 @@ def fetch_listings(method="v6", per_page=None):
         response_data = fetch_listings_web()
     else:
         raise ValueError("Invalid method. Choose 'v6' or 'web'.")
-
-    # framer_five_it(response_data)
 
     return response_data
 
@@ -193,42 +187,6 @@ def fetch_listings_web():
     return parse_web_listings(html_content)
 
 
-def framer_five_it(response_data):
-    """Places the five most recent listings in a blob for marketing site
-    Returns the response data as well for future automation."""
-    try:
-        filtered_data = [
-            {
-                "photo": f"https://photos.zillowstatic.com/fp/{node['leadMedia']['photo']['key']}-se_large_800_400.webp" if node.get(
-                    "leadMedia") and node["leadMedia"].get("photo") else None,
-                "url": f"https://streeteasy.com{node.get('urlPath')}" if node.get("urlPath") else None,
-                "topLine": (
-                    f"{'${:,.0f}'.format(node.get('price')) if node.get('price') else 'Price not available'} | "
-                    f"{'No Fee' if node.get('noFee') else 'Fee Likely'} | "
-                    f"{node.get('areaName')}" if node.get("areaName") else None
-                ),
-
-                "bedBathDisplay": (
-                    f"{'Studio' if node.get('bedroomCount', 0) == 0 else f'{node.get('bedroomCount', 0)} Bed'} | "
-                    f"{f'{int(node.get('fullBathroomCount', 0))} Bath' if node.get('halfBathroomCount', 0) == 0 else f'{node.get('fullBathroomCount', 0) + node.get('halfBathroomCount', 0) * 0.5:.1f} Bath'}"
-                )
-            }
-            for edge in response_data.get("edges", [])[:5]
-            for node in [edge.get("node", {})]
-        ]
-
-        blob_json = get_framer_five(filtered_data)
-        vercel_blob.blob_store.put(
-            'latest_listings.json',
-            json.dumps(blob_json).encode('utf-8'),
-            options={"token": LISTINGS_BLOB_READ_WRITE_TOKEN, "addRandomSuffix": False, "cacheControlMaxAge": "0"}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"BlobError: {e}")
-
-    logger.info("Framer Five blob updated")
-
-
 def parse_web_listings(html_content):
     """ Parse listings from StreetEasy web page with full response details. """
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -317,4 +275,4 @@ def parse_web_listings(html_content):
 
 if __name__ == "__main__":
     print(fetch_listings(method="v6", per_page=10))
-    print(fetch_listings(method="web"))
+   # print(fetch_listings(method="web"))
