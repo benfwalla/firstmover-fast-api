@@ -12,6 +12,7 @@ from util.vin import evaluate_listing
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
 from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
+from util.check_off_market import fetch_listing_statuses, fetch_and_upsert_buildings
 
 # Configure logging
 logging.basicConfig(
@@ -178,7 +179,34 @@ def insert_listings_util(per_page):
                     for customer in matched_customers
                 )
 
+    # Bulk fetch building IDs for all new listings (1 API call instead of N)
     if new_listings:
+        try:
+            new_listing_ids = [l["id"] for l in new_listings]
+            se_data = fetch_listing_statuses(new_listing_ids)
+            if se_data:
+                # Collect building IDs we need to fetch
+                building_ids_needed = set()
+                listing_to_building = {}
+                for lid, info in se_data.items():
+                    if info.get("building_id"):
+                        building_ids_needed.add(info["building_id"])
+                        listing_to_building[lid] = info["building_id"]
+
+                # Bulk fetch and upsert buildings (1 API call)
+                if building_ids_needed:
+                    _, known_building_ids = fetch_and_upsert_buildings(building_ids_needed)
+
+                    # Set building_id on listings (only if building exists in DB)
+                    for listing in new_listings:
+                        bid = listing_to_building.get(listing["id"])
+                        if bid and bid in known_building_ids:
+                            listing["building_id"] = bid
+
+                    logger.info(f"Bulk linked {sum(1 for l in new_listings if l.get('building_id'))} listings to buildings")
+        except Exception as e:
+            logger.warning(f"Bulk building fetch failed, continuing without building data: {e}")
+
         upsert_new_listings(new_listings)
         redis.set("last_ids", ",".join(latest_ids))
 
