@@ -90,6 +90,30 @@ def upsert_new_listings(new_listings):
         raise HTTPException(status_code=500, detail=f"Supabase Error: {e}")
 
 
+def upsert_building(building):
+    """Upsert a single building into the buildings table."""
+    try:
+        response = supabase.table("buildings").upsert(building).execute()
+        logger.info(f"Building upsert successful: {building['id']}")
+        return response
+    except Exception as e:
+        logger.error(f"Error upserting building {building.get('id')}: {e}")
+        return None
+
+
+def upsert_buildings(buildings):
+    """Upsert multiple buildings into the buildings table."""
+    if not buildings:
+        return None
+    try:
+        response = supabase.table("buildings").upsert(buildings).execute()
+        logger.info(f"Bulk building upsert successful: {len(buildings)} buildings")
+        return response
+    except Exception as e:
+        logger.error(f"Error bulk upserting buildings: {e}")
+        return None
+
+
 def insert_customer_matches(matches_dict: [dict]):
     try:
         now = datetime.now(timezone.utc).isoformat()

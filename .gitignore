@@ -6,3 +6,8 @@ __pycache__/
 
 .env
 playground
+
+introspection.json
+scripts/run_backfill_loop.sh
+backfill.log
+__init__.py

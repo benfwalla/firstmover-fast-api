@@ -11,7 +11,8 @@ from util.get_listings import fetch_listings
 from util.vin import evaluate_listing
 from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
-from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
+from util.db_queries import upsert_new_listings, upsert_building, insert_customer_matches, find_matching_customers
+from util.get_building import fetch_building_by_listing_id
 
 # Configure logging
 logging.basicConfig(
@@ -122,6 +123,17 @@ def insert_listings_util(per_page):
                 "upcoming_open_house_end": (node.get("upcomingOpenHouse") or {}).get("endTime"),
                 "upcoming_open_house_appointment_only": (node.get("upcomingOpenHouse") or {}).get("appointmentOnly"),
             }
+
+            # Try to fetch and upsert building data — continue if this fails
+            try:
+                building = fetch_building_by_listing_id(node.get("id"))
+                if building:
+                    upsert_building(building)
+                    listing["building_id"] = building["id"]
+                    logger.info(f"Linked listing {listing['id']} to building {building['id']}")
+            except Exception as e:
+                logger.warning(f"Building fetch failed for listing {listing['id']}, continuing: {e}")
+
             new_listings.append(listing)
 
             total_bathrooms = listing.get("full_bathroom_count", 0) + (listing.get("half_bathroom_count", 0)*0.5)

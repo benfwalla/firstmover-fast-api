@@ -154,21 +154,24 @@ def fetch_listings_v6(per_page):
         "priority": "u=1, i",
     }
 
-    # Proxy setup
-    random_port = get_random_valid_port()
-    proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@state.smartproxy.com:{random_port}"
-    proxies = {"http": proxy_full_url, "https": proxy_full_url}
-    logger.info("Fetching %s listings on Smartproxy port %s", per_page, random_port)
+    # Proxy setup — retry once with a different port on failure
+    last_error = None
+    for attempt in range(2):
+        random_port = get_random_valid_port()
+        proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@state.smartproxy.com:{random_port}"
+        proxies = {"http": proxy_full_url, "https": proxy_full_url}
+        logger.info("Fetching %s listings on Smartproxy port %s (attempt %d)", per_page, random_port, attempt + 1)
 
-    try:
-        response = requests.post(url, headers=headers, json=payload, proxies=proxies)
-        response.raise_for_status()
-        response_data = response.json()["data"]["searchRentals"]
-    except requests.exceptions.RequestException as e:
-        logger.error("Failed to fetch from Streeteasy: %s", e)
-        raise HTTPException(status_code=500, detail=f"Error: {e}")
+        try:
+            response = requests.post(url, headers=headers, json=payload, proxies=proxies)
+            response.raise_for_status()
+            return response.json()["data"]["searchRentals"]
+        except requests.exceptions.RequestException as e:
+            logger.warning("Attempt %d failed on port %s: %s", attempt + 1, random_port, e)
+            last_error = e
 
-    return response_data
+    logger.error("Failed to fetch from Streeteasy after 2 attempts: %s", last_error)
+    raise HTTPException(status_code=500, detail=f"Error: {last_error}")
 
 
 def fetch_listings_web():
