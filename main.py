@@ -5,6 +5,7 @@ from util.validate import validate_bearer_token
 from util.get_listings import fetch_listings
 from util.insert_listings import insert_listings_util
 from util.db_queries import get_avg_listings_last_14_days_by_name
+from util.check_off_market import check_off_market
 
 app = FastAPI()
 
@@ -39,6 +40,10 @@ async def get_avg_listings_last_14_days(request: Request):
         bedrooms=body["bedrooms"],
         min_bathroom=body["min_bathroom"]
     )
+
+@app.post("/checkOffMarket")
+def check_off_market_endpoint(batchSize: int = 500, _: bool = Depends(validate_bearer_token)):
+    return check_off_market(batch_size=batchSize)
 
 @app.options("/getAvgListingsLast14Days")
 def options_avg_listings_last_14_days(response: Response):
