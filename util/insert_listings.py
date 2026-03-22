@@ -8,8 +8,6 @@ from upstash_redis import Redis
 from supabase import create_client, Client
 
 from util.get_listings import fetch_listings
-from util.vin import evaluate_listing
-from util.telegram import send_to_telegram
 from util.push_notification import send_push_notification
 from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
 from util.check_off_market import fetch_listing_statuses, fetch_and_upsert_buildings
@@ -42,9 +40,6 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase configuration")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Telegram configuration
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 
 
 def insert_listings_util(per_page):
@@ -130,27 +125,6 @@ def insert_listings_util(per_page):
             total_bathrooms = int(total_bathrooms) if total_bathrooms.is_integer() else total_bathrooms
 
             bedroom_display = "Studio" if listing.get("bedroom_count", 0) == 0 else f"{listing['bedroom_count']} Bed"
-
-            telegram_message = (
-                f"${listing['price']:,} | {'Fee Likely' if not listing.get('no_fee', False) else 'No Fee'} | {listing['area_name']}\n"
-                f"{bedroom_display} | {total_bathrooms} Bath\n"
-                f"<a href='https://streeteasy.com{listing['url_path']}'>View Listing</a>"
-            )
-
-            jolie_criteria = {
-                "allowed_areas": {
-                    "Noho", "Hudson Square", "Soho", "East Village", "Gramercy Park", "Kips Bay",
-                    "Upper East Side", "Carnegie Hill", "Lenox Hill", "Upper Carnegie Hill", "Yorkville", "Chelsea",
-                    "West Chelsea", "West Village", "Upper West Side", "Lincon Square", "Manhattan Valley",
-                    "Flatiron", "NoMad", "Nolita", "Greenwich Village"
-                },
-                "max_price": 2666,
-                "min_bedroom_count": 0,
-                "max_bedroom_count": 1
-            }
-            if evaluate_listing(listing, **jolie_criteria):
-                send_to_telegram(1849621681, telegram_message, TELEGRAM_BOT_TOKEN)
-                send_to_telegram(-4731252559, f"Jolie match:\n{telegram_message}", TELEGRAM_BOT_TOKEN)
 
             matched_customers = find_matching_customers(
                 listing["area_name"],
