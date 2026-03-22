@@ -128,9 +128,10 @@ def insert_listings_util(per_page):
             try:
                 building = fetch_building_by_listing_id(node.get("id"))
                 if building:
-                    upsert_building(building)
-                    listing["building_id"] = building["id"]
-                    logger.info(f"Linked listing {listing['id']} to building {building['id']}")
+                    result = upsert_building(building)
+                    if result:  # Only set FK if building actually saved to DB
+                        listing["building_id"] = building["id"]
+                        logger.info(f"Linked listing {listing['id']} to building {building['id']}")
             except Exception as e:
                 logger.warning(f"Building fetch failed for listing {listing['id']}, continuing: {e}")
 
