@@ -9,7 +9,12 @@ from supabase import create_client, Client
 
 from util.get_listings import fetch_listings
 from util.push_notification import send_push_notification
-from util.db_queries import upsert_new_listings, insert_customer_matches, find_matching_customers
+from util.db_queries import (
+    find_matching_customers,
+    insert_customer_matches,
+    normalize_streeteasy_area_name,
+    upsert_new_listings,
+)
 from util.check_off_market import fetch_listing_statuses, fetch_and_upsert_buildings
 
 # Configure logging
@@ -80,9 +85,13 @@ def insert_listings_util(per_page):
     for edge in edges:
         node = edge["node"]
         if node.get("id") in new_ids:
+            area_name = normalize_streeteasy_area_name(
+                node.get("areaName"),
+                node.get("zipCode"),
+            )
             listing = {
                 "id": node.get("id"),
-                "area_name": node.get("areaName"),
+                "area_name": area_name,
                 "available_at": node.get("availableAt"),
                 "bedroom_count": node.get("bedroomCount"),
                 "building_type": node.get("buildingType"),

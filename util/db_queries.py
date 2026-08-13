@@ -21,6 +21,21 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
+def normalize_streeteasy_area_name(area_name, zip_code):
+    """Disambiguate StreetEasy's Murray Hill area using its ZIP code."""
+    if area_name != "Murray Hill" or zip_code is None:
+        return area_name
+
+    normalized_zip_code = str(zip_code).strip()[:5]
+    if len(normalized_zip_code) != 5 or not normalized_zip_code.isdigit():
+        return area_name
+
+    if normalized_zip_code in {"11354", "11355", "11358"}:
+        return "Murray Hill (Queens)"
+
+    return area_name
+
+
 def get_avg_listings_last_14_days_by_name(neighborhood_names, min_price, max_price, bedrooms, min_bathroom):
     """
     Given user inputs of search criteria, return the average number of listings in the last 14 days.
@@ -49,10 +64,7 @@ def find_matching_customers(area_name, bedroom_count, bathroom_count, price, bro
     :return: an array of dictionaries containing 'customer_search_id', 'device_token', and 'user_id'
     """
 
-    if area_name == "Murray Hill":
-        if str(zip_code).startswith("11"):
-            print("Yoooooo Im in Queens!!")
-            area_name = "Murray Hill (Queens)"
+    area_name = normalize_streeteasy_area_name(area_name, zip_code)
 
     if area_name == "Bay Terrace":
         if str(zip_code).startswith("11"):
