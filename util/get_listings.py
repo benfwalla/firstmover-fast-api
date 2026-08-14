@@ -160,7 +160,7 @@ def fetch_listings_v6(per_page):
         random_port = get_random_valid_port()
         proxy_full_url = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@state.smartproxy.com:{random_port}"
         proxies = {"http": proxy_full_url, "https": proxy_full_url}
-        logger.info("Fetching %s listings on Smartproxy port %s (attempt %d)", per_page, random_port, attempt + 1)
+        logger.debug("Fetching %s listings (attempt %d)", per_page, attempt + 1)
 
         try:
             response = requests.post(url, headers=headers, json=payload, proxies=proxies)

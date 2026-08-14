@@ -64,10 +64,11 @@ def fetch_listing_statuses(listing_ids):
 
 def fetch_and_upsert_buildings(building_ids):
     """Fetch full building data for IDs we don't have yet, upsert them.
-    Returns (count_added, set_of_all_known_ids) so callers know which building_ids are safe to link.
+    Returns (count_added, all_known_ids, newly_added_ids) so callers can
+    distinguish listings linked to existing buildings from newly created ones.
     """
     if not building_ids:
-        return 0, set()
+        return 0, set(), set()
 
     # Check which buildings we already have
     existing = supabase.table("buildings").select("id").in_("id", list(building_ids)).execute()
@@ -75,7 +76,7 @@ def fetch_and_upsert_buildings(building_ids):
     new_ids = [bid for bid in building_ids if bid not in existing_ids]
 
     if not new_ids:
-        return 0, existing_ids
+        return 0, existing_ids, set()
 
     logger.info(f"Fetching {len(new_ids)} new buildings via buildingsByIds")
 
@@ -108,11 +109,11 @@ def fetch_and_upsert_buildings(building_ids):
 
             upserted_ids = {b["id"] for b in unique}
             logger.info(f"Upserted {len(unique)} new buildings")
-            return len(unique), existing_ids | upserted_ids
+            return len(unique), existing_ids | upserted_ids, upserted_ids
     except Exception as e:
         logger.error(f"Failed to fetch/upsert buildings: {e}")
 
-    return 0, existing_ids
+    return 0, existing_ids, set()
 
 
 def check_off_market(batch_size=500):
@@ -206,7 +207,7 @@ def check_off_market(batch_size=500):
     logger.info(f"Updated {off_market_count} listings to off-market")
 
     # 2. Fetch and upsert new buildings
-    buildings_added, known_building_ids = fetch_and_upsert_buildings(building_ids_to_fetch)
+    buildings_added, known_building_ids, _ = fetch_and_upsert_buildings(building_ids_to_fetch)
 
     # 3. Backfill building_id on listings (only for buildings we know exist)
     buildings_linked = 0

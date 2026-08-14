@@ -13,8 +13,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
-logging.getLogger("httpx").setLevel(logging.INFO)
-logging.getLogger("urllib3").setLevel(logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -95,7 +95,7 @@ def find_matching_customers(area_name, bedroom_count, bathroom_count, price, bro
 def upsert_new_listings(new_listings):
     try:
         response = supabase.table("listings").upsert(new_listings).execute()
-        logger.info(f"Supabase upsert successful!")
+        logger.debug("Supabase listing upsert successful")
         return response
     except Exception as e:
         logger.error(f"Error during Supabase upsert: {e}")
