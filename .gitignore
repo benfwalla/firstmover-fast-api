@@ -11,3 +11,5 @@ introspection.json
 scripts/run_backfill_loop.sh
 backfill.log
 __init__.py
+.vercel
+.env.local

@@ -19,6 +19,7 @@ from util.db_queries import (
     upsert_new_listings,
 )
 from util.check_off_market import fetch_listing_statuses, fetch_and_upsert_buildings
+from util.ernie import matches_ernie_search, send_to_ernie
 
 # Configure logging
 logging.basicConfig(
@@ -68,6 +69,7 @@ def insert_listings_util(per_page):
         "linked_to_existing_building": 0,
         "linked_to_new_building": 0,
         "not_linked_to_building": 0,
+        "ernie_webhooks_delivered": 0,
     }
     _log_event("info", "listing_scrape_started", run_id, per_page=per_page)
 
@@ -137,6 +139,7 @@ def _insert_listings_util(per_page, run_id, stats):
     # Prepare new listings for upsert
     new_listings = []
     new_matches = []
+    ernie_matches = []
     customer_match_counts = {}
     stats["stage"] = "prepare_listings"
 
@@ -187,6 +190,9 @@ def _insert_listings_util(per_page, run_id, stats):
             }
 
             new_listings.append(listing)
+
+            if matches_ernie_search(listing):
+                ernie_matches.append(listing)
 
             total_bathrooms = listing.get("full_bathroom_count", 0) + (listing.get("half_bathroom_count", 0)*0.5)
             total_bathrooms = int(total_bathrooms) if total_bathrooms.is_integer() else total_bathrooms
@@ -262,6 +268,35 @@ def _insert_listings_util(per_page, run_id, stats):
         stats["stage"] = "save_listings"
         upsert_new_listings(new_listings)
         stats["saved"] = len(new_listings)
+
+        stats["stage"] = "deliver_customer_webhooks"
+        for listing in ernie_matches:
+            try:
+                if send_to_ernie(listing):
+                    stats["ernie_webhooks_delivered"] += 1
+                    _log_event(
+                        "info",
+                        "ernie_webhook_delivered",
+                        run_id,
+                        listing_id=listing["id"],
+                        delivery_id=f"fm:ernie:listing:{listing['id']}",
+                    )
+                else:
+                    _log_event(
+                        "warning",
+                        "ernie_webhook_not_delivered",
+                        run_id,
+                        listing_id=listing["id"],
+                    )
+            except Exception as error:
+                _log_event(
+                    "error",
+                    "ernie_webhook_failed",
+                    run_id,
+                    listing_id=listing["id"],
+                    error_type=type(error).__name__,
+                    error=str(error),
+                )
 
         for listing in new_listings:
             outcome = building_outcomes[listing["id"]]
